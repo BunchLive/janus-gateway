@@ -234,6 +234,19 @@ void janus_add_public_ip(const gchar *ip) {
 		public_ips_ipv4 = TRUE;
 	}
 }
+void janus_add_fqdn(const gchar *fdqn) {
+	if(fdqn == NULL) {
+		return;
+	}
+	if(!public_ips_table) {
+		public_ips_table = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify)g_free, NULL);
+	}
+	if (g_hash_table_insert(public_ips_table, g_strdup(fdqn), NULL)) {
+		g_list_free(public_ips);
+		public_ips = g_hash_table_get_keys(public_ips_table);
+	}
+}
+
 gboolean janus_has_public_ipv4_ip(void) {
 	return public_ips_ipv4;
 }
@@ -4417,6 +4430,9 @@ gint main(int argc, char *argv[])
 	if(args_info.nat_1_1_given) {
 		janus_config_add(config, config_nat, janus_config_item_create("nat_1_1_mapping", args_info.nat_1_1_arg));
 	}
+	if(args_info.fqdn_nat_1_1_given) {
+		janus_config_add(config, config_nat, janus_config_item_create("fqdn_nat_1_1_mapping", args_info.fqdn_nat_1_1_arg));
+	}
 	if(args_info.keep_private_host_given) {
 		janus_config_add(config, config_nat, janus_config_item_create("keep_private_host", "true"));
 	}
@@ -4701,6 +4717,25 @@ gint main(int argc, char *argv[])
 	/* Check if we should drop mDNS candidates */
 	item = janus_config_get(config, config_nat, janus_config_type_item, "ignore_mdns");
 	ignore_mdns = (item && item->value) ? janus_is_true(item->value) : FALSE;
+	/* Any FDQN 1:1 NAT mapping to take into account? */
+	item = janus_config_get(config, config_nat, janus_config_type_item, "fqdn_nat_1_1_mapping");
+	if(item && item->value) {
+		JANUS_LOG(LOG_INFO, "Using fqdn_nat_1_1_mapping for FQDN: %s\n", item->value);
+		char **list = g_strsplit(item->value, ",", -1);
+		char *index = list[0];
+		if(index != NULL) {
+			int i=0;
+			while(index != NULL) {
+				if(strlen(index) > 0) {
+					/* We don't validate domain names */
+					janus_add_fqdn(index);
+				}
+				i++;
+				index = list[i];
+			}
+		}
+		g_strfreev(list);
+	}
 	/* Any 1:1 NAT mapping to take into account? */
 	item = janus_config_get(config, config_nat, janus_config_type_item, "nat_1_1_mapping");
 	if(item && item->value) {

@@ -277,6 +277,8 @@ gchar *janus_get_public_ip(guint index);
 guint janus_get_public_ip_count(void);
 /*! \brief Helper method to add an IP address to use in the SDP */
 void janus_add_public_ip(const char *ip);
+/*! \brief Helper method to add a FQDN to use in the SDP */
+void janus_add_fqdn(const char *fdqn);
 /*! \brief Helper method to check if we have at least one manually passed public IPv4 address (for 1-1 NAT management) */
 gboolean janus_has_public_ipv4_ip(void);
 /*! \brief Helper method to check if we have at least one manually passed public IPv6 address (for 1-1 NAT management) */
